@@ -1,9 +1,10 @@
 import httpx
 
 from .errors import AuthenticationError, InvalidCredentials
+from .server import Server
 
 class User:
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, api, *args, **kwargs) -> None:
         self.id = kwargs.get("id", None)
         self.admin = kwargs.get("admin", None)
         self.username = kwargs.get("username", None)
@@ -12,14 +13,29 @@ class User:
         self.last_name = kwargs.get("last_name", None)
         self.language = kwargs.get("language", None)
         self.deleted = False
+        self.api = api
         
     def get_servers(self) -> list:
-        pass
+        if self.admin:
+            servers = []
+            resp = self.api.get(f"/api/application/servers")
+            for server in resp.json()["data"]:
+                server = Server(**server["attributes"])
+                if server.user == self.id:
+                    servers.append(server)
+        else:
+            resp = self.api.get("/api/client")
+            servers = []
+            for server in resp.json()["data"]:
+                server = Server(**server["attributes"])
+                servers.append(server)
+                
+        return servers
     
     def update(self, username, first_name, last_name, language, password, email) -> None:
         if not self.admin:
             raise AuthenticationError("You must be an admin to update a account")
-        resp = self.client.post(f"{self.panel_url}/api/application/users/{self.id}", json={
+        resp = self.api.post(f"/api/application/users/{self.id}", json={
             "email": email,
             "username": username,
             "first_name": first_name,
@@ -35,7 +51,7 @@ class User:
     def delete(self) -> None:
         if not self.admin:
             raise AuthenticationError("You must be an admin to delete a account")
-        resp = self.client.delete(f"{self.panel_url}/api/application/users/{self.id}")
+        resp = self.api.delete(f"/api/application/users/{self.id}")
         if resp.status_code == 204:
             self.deleted = True
         else:
