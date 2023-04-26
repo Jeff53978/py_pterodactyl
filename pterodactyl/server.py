@@ -50,6 +50,12 @@ class Server:
         self.pack = kwargs.get("pack", None)
         self.container = ContainerOptions(**kwargs.get("container", {}))
         
+    def delete(self) -> None:
+        resp = self.api.delete(f"/api/application/servers/{self.id}")
+        if resp.status_code == 204:
+            return
+        raise Exception(resp.json()["errors"][0]["detail"])
+        
     def __str__(self) -> str:
         return f"<Server id={self.id} external_id={self.external_id} uuid={self.uuid} identifier={self.identifier} name={self.name} description={self.description} suspended={self.suspended} limits={self.limits} feature_limits={self.feature_limits} user={self.user} node={self.node} allocation={self.allocation} nest={self.nest} egg={self.egg} pack={self.pack} container={self.container}>"
         
