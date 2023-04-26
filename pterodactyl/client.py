@@ -1,6 +1,7 @@
 import httpx
 
-from .errors import AuthenticationError
+from .errors import AuthenticationError, InvalidCredentials
+from .user import User
 
 class Client:
     def __init__(self, panel_url, api_key):
@@ -10,6 +11,7 @@ class Client:
         self.client.headers.update({
             "Authorization": f"Bearer {self.api_key}",
         })
-        resp = self.client.get(f"{self.panel_url}/api/client/permissions")
+        resp = self.client.get(f"{self.panel_url}/api/client/account")
         if resp.status_code == 400 or resp.status_code == 302:
-            raise AuthenticationError("Improper API key passed")
+            raise InvalidCredentials("Improper API key passed")
+        self.user = User(**resp.json()["attributes"])
