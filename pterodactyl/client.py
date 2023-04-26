@@ -21,6 +21,20 @@ class Client:
         if resp.status_code == 404:
             raise Exception("User not found")
         return User(self.api, **resp.json()["attributes"])
+    
+    def create_user(self, username, first_name, last_name, email):
+        if not self.user.admin:
+            raise AuthenticationError("You must be an admin to create a user")
+        resp = self.api.post("/api/application/users", json={
+            "email": email,
+            "username": username,
+            "first_name": first_name,
+            "last_name": last_name,
+        })
+        if resp.status_code == 201:
+            return User(self.api, **resp.json()["attributes"])
+        
+        raise Exception("Failed to create user")
         
 class HTTPClient:
     def __init__(self, panel_url, api_key):
