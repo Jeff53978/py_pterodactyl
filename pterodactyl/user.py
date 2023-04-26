@@ -46,6 +46,29 @@ class User:
                 
         return servers
     
+    # Nog niet af
+    def create_server(self, name, description, egg, docker_image, startup, limits, environment, feature_limits, allocation, location, **kwargs) -> Server:
+        if not self.id:
+            raise Exception("Application API does not have a user")
+        if not self.admin:
+            raise AuthenticationError("You must be an admin to create a server")
+        resp = self.api.post("/api/application/servers", json={
+            "name": name,
+            "description": description,
+            "egg": egg,
+            "docker_image": docker_image,
+            "startup": startup,
+            "limits": limits,
+            "environment": environment,
+            "feature_limits": feature_limits,
+            "allocation": allocation,
+            "location": location,
+            **kwargs
+        })
+        if resp.status_code == 422:
+            raise Exception("Server already exists")
+        return Server(**resp.json()["attributes"])
+    
     def update(self, username, first_name, last_name, language, password, email) -> None:
         if not self.id:
             raise Exception("Application API does not have a user")
