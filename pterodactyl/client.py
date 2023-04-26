@@ -6,10 +6,21 @@ from .user import User
 class Client:
     def __init__(self, panel_url, api_key):
         self.api = HTTPClient(panel_url, api_key)
-        resp = self.api.get(f"/api/client/account")
-        if resp.status_code == 400 or resp.status_code == 302:
-            raise InvalidCredentials("Improper API key passed")
-        self.user = User(self.api, **resp.json()["attributes"])
+        try:
+            resp = self.api.get(f"/api/client/account")
+            if resp.status_code == 400 or resp.status_code == 302:
+                raise InvalidCredentials("Improper API key passed")
+            self.user = User(self.api, **resp.json()["attributes"])
+        except:
+            self.user = User(self.api)
+        
+    def get_user(self, id: int):
+        if not self.user.admin:
+            raise AuthenticationError("You must be an admin to get a user")
+        resp = self.api.get(f"/api/application/users/{id}")
+        if resp.status_code == 404:
+            raise Exception("User not found")
+        return User(self.api, **resp.json()["attributes"])
         
 class HTTPClient:
     def __init__(self, panel_url, api_key):
